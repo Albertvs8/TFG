@@ -1,9 +1,14 @@
 #define PROFILE
 
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
 #include "openfhe.h"
 #include <cmath>
 
 using namespace lbcrypto;
+using namespace std;
 
 //Plain inputs
 double binomialCoefficient(int n, int k) {
@@ -163,7 +168,7 @@ int main() {
     double a;
     double b;
     int n=4;
-    int d=9;
+    int d=4;
     int df=2;
     int dg=4;
 
@@ -209,9 +214,9 @@ int main() {
     int vec_size = vector_a.size();
 
     // Setup parameters cryptocontext
-    uint32_t multDepth = 55;
+    uint32_t multDepth = 37;
     uint32_t scaleModSize = 50;
-    uint32_t batchSize = vec_size;
+    uint32_t batchSize = 16;
     
     CCParams<CryptoContextCKKSRNS> parameters;
     
@@ -249,6 +254,7 @@ int main() {
     std::cout << "Input a: " << ptxta << std::endl;
     std::cout << "Input b: " << ptxtb << std::endl;
 
+
     // Encrypt
     auto c1 = cc->Encrypt(keys.publicKey, ptxta);
     auto c2 = cc->Encrypt(keys.publicKey, ptxtb);
@@ -276,6 +282,8 @@ int main() {
     result_decrypted_g->SetLength(batchSize);
     std::cout << "Using g polynomials: comp( a ,  b ) = " << result_decrypted_g << std::endl;
     std::cout << "Time taken: " << std::chrono::duration<double>(duration).count() << " seconds" << std::endl;
+
+    return 0;
 
 }
     
