@@ -214,7 +214,7 @@ vector<vector<Ciphertext<DCRTPoly>>> merge(const CryptoContext<DCRTPoly> &cc, co
 }
 
 
-vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &A, const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetA, const Ciphertext<DCRTPoly> &aux_enc1,string myString,const KeyPair<DCRTPoly> &keys){
+vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &A, const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetA){
     if (A.size()==1) {
         return A;
     }
@@ -240,14 +240,14 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
     }
 
       
-    auto B = merge_sort(cc,vector<vector<Ciphertext<DCRTPoly>>>(A.begin(), A.begin()+s), comparisonSetB,aux_enc1,myString,keys);
-    auto C = merge_sort(cc,vector<vector<Ciphertext<DCRTPoly>>>(A.begin()+s, A.end()), comparisonSetC,aux_enc1,myString,keys);
+    auto B = merge_sort(cc,vector<vector<Ciphertext<DCRTPoly>>>(A.begin(), A.begin()+s), comparisonSetB,aux_enc1);
+    auto C = merge_sort(cc,vector<vector<Ciphertext<DCRTPoly>>>(A.begin()+s, A.end()), comparisonSetC,aux_enc1);
 
     int k=A.size();
 
     vector<vector<vector<Ciphertext<DCRTPoly>>>> unionBiAj;
     for (int j = (s+1); j<=k; j++){
-        auto sorterParameter = vector<vector<Ciphertext<DCRTPoly>>>(comparisonSetA.begin(), comparisonSetA.begin()+s); //ERROR AQUI
+        auto sorterParameter = vector<vector<Ciphertext<DCRTPoly>>>(comparisonSetA.begin(), comparisonSetA.begin()+s); 
         vector<vector<Ciphertext<DCRTPoly>>> sorterParameter1;
         int sp_size = sorterParameter.size();
 
@@ -256,7 +256,7 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
             sorterParameter1.push_back(row);
         }
 
-        auto BCOMPaj = merge_sort(cc,sorterParameter1,comparisonSetB,aux_enc1,"comp",keys);
+        auto BCOMPaj = merge_sort(cc,sorterParameter1,comparisonSetB,aux_enc1);
         unionBiAj.push_back(BCOMPaj);
     }
 
@@ -268,7 +268,7 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
         for(int j=0; j<k-s; j++){ 
             sorterParameter2.push_back(unionBiAj[j][i-1]);
         }
-        auto biCOMPC = merge_sort(cc,sorterParameter2,comparisonSetC,aux_enc1,"comp",keys);
+        auto biCOMPC = merge_sort(cc,sorterParameter2,comparisonSetC,aux_enc1);
         unionBC.push_back(biCOMPC);
     }
 
@@ -432,7 +432,7 @@ int main() {
     std::vector<double> aux = {-1.0};
     Plaintext p_aux = cc->MakeCKKSPackedPlaintext(aux);
     auto c_aux = cc->Encrypt(keys.publicKey, p_aux);
-    vector<vector<Ciphertext<DCRTPoly>>> sorted_A = merge_sort(cc,A,comparisonSetA,c_aux,"Array",keys);
+    vector<vector<Ciphertext<DCRTPoly>>> sorted_A = merge_sort(cc,A,comparisonSetA,c_aux);
 
     auto stop_merge = std::chrono::high_resolution_clock::now();
     auto duration_merge = std::chrono::duration_cast<std::chrono::microseconds>(stop_merge - stop_comp);
