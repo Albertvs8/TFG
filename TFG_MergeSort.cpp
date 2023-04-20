@@ -214,7 +214,7 @@ vector<vector<Ciphertext<DCRTPoly>>> merge(const CryptoContext<DCRTPoly> &cc, co
 }
 
 
-vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &A, const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetA){
+vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &A, const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetA, const Ciphertext<DCRTPoly> &aux_enc1){
     if (A.size()==1) {
         return A;
     }
@@ -400,7 +400,7 @@ int main() {
     int vec_size = 1;
 
     //Compute pairwise comparisons
-    std::vector<double> enc_05 = {-1.0};
+    std::vector<double> enc_05 = {0.5};
     Plaintext p_05 = cc->MakeCKKSPackedPlaintext(enc_05);
     auto c_enc_05 = cc->Encrypt(keys.publicKey, p_05);
 

@@ -6,9 +6,71 @@
 #include <string>
 #include "openfhe.h"
 #include <cmath>
+#include <stdexcept>
 
 using namespace lbcrypto;
 using namespace std;
+
+
+//PAS 1
+// Function to scale the dataset using min-max scaling
+vector<vector<vector<double>>> min_max_scaling(const vector<vector<vector<double>>>& dataset) {
+    vector<vector<double>> min_max_values(dataset[0].size()-1, vector<double>(2));
+    for (auto& row : min_max_values) {
+        row[0] = std::numeric_limits<double>::max();
+        row[1] = std::numeric_limits<double>::lowest();
+    }
+
+    for (const auto& row : dataset) {
+        for (size_t i = 0; i < row.size()-1; i++) {
+            double value = row[i][0];
+            if (value < min_max_values[i][0]) {
+                min_max_values[i][0] = value; 
+            }
+            if (value > min_max_values[i][1]) {
+                min_max_values[i][1] = value; 
+            }
+        }
+    }
+    
+    vector<vector<vector<double>>> scaled_dataset;
+    for (const auto& row : dataset) {
+        vector<vector<double>> scaled_row(row.size(), vector<double>(1));
+        for (size_t i = 0; i < row.size()-1; i++) {
+            double value = row[i][0];
+            double min_value = min_max_values[i][0];
+            double max_value = min_max_values[i][1];
+            double scaled_value = (0.57*(value - min_value)) / (max_value - min_value);
+            scaled_row[i][0] = scaled_value;
+        }
+        scaled_row.back()[0] = row.back()[0];
+        scaled_dataset.push_back(scaled_row);
+    }
+
+    return scaled_dataset;
+}
+
+
+
+//PAS 3
+Ciphertext<DCRTPoly> euclidean_distance(const CryptoContext<DCRTPoly> &cc, const vector<Ciphertext<DCRTPoly>> &X, const vector<Ciphertext<DCRTPoly>> &Y){
+    if (X.size()!=Y.size()){
+        throw std::invalid_argument("X and Y sizes are different");
+    }
+
+    vector<Ciphertext<DCRTPoly>> potencies;
+    for (size_t i = 0; i < X.size(); i++) { 
+        auto resta = cc->EvalAdd(X[i],-Y[i]);
+        auto potencia = cc->EvalMult(resta, resta);
+        potencies.push_back(potencia);
+    }
+
+    Ciphertext<DCRTPoly> result = potencies[0];
+    for (size_t i = 1; i < X.size(); i++) { 
+        result = cc->EvalAdd(result,potencies[i]);
+    }
+    return result;
+}
 
 
 //PAS 4
@@ -39,6 +101,32 @@ Ciphertext<DCRTPoly> f_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
     return result;
 }
 
+Ciphertext<DCRTPoly> f_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+    auto c2 = cc->EvalMult(c, c); // c^2
+    auto c3 = cc->EvalMult(c2, c); // c^3
+    auto c5 = cc->EvalMult(c2, c3); // c^5
+    auto c7 = cc->EvalMult(c2, c5); // c^7
+
+    auto const1 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-5.0/16.0}));
+    auto const2 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{21.0/16.0}));
+    auto const3 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-35.0/16.0}));
+    auto const4 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{35.0/16.0}));
+
+
+    auto term1 = cc->EvalMult(const1, c7);
+    auto term2 = cc->EvalMult(const2, c5);
+    auto term3 = cc->EvalMult(const3, c3);
+    auto term4 = cc->EvalMult(const4, c);
+
+    auto result = cc->EvalAdd(term1, term2);
+    result = cc->EvalAdd(result, term3);
+    result = cc->EvalAdd(result, term4);
+
+    return result;
+}
+
+
+
 Ciphertext<DCRTPoly> g_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
@@ -66,15 +154,39 @@ Ciphertext<DCRTPoly> g_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
     return result;
 }
 
+Ciphertext<DCRTPoly> g_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+    auto c2 = cc->EvalMult(c, c); // c^2
+    auto c3 = cc->EvalMult(c2, c); // c^3
+    auto c5 = cc->EvalMult(c2, c3); // c^5
+    auto c7 = cc->EvalMult(c2, c5); // c^7
+
+    auto const1 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-12860.0/1024.0}));
+    auto const2 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{25614.0/1024.0}));
+    auto const3 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-16577.0/1024.0}));
+    auto const4 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{4589.0/1024.0}));
+
+
+    auto term1 = cc->EvalMult(const1, c7);
+    auto term2 = cc->EvalMult(const2, c5);
+    auto term3 = cc->EvalMult(const3, c3);
+    auto term4 = cc->EvalMult(const4, c);
+
+    auto result = cc->EvalAdd(term1, term2);
+    result = cc->EvalAdd(result, term3);
+    result = cc->EvalAdd(result, term4);
+
+    return result;
+}
+
 
 
 Ciphertext<DCRTPoly> homomorphic_comparison_g(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c1, const Ciphertext<DCRTPoly> &c2, int df, int dg, int vec_size) {
     auto x = cc->EvalSub(c1, c2);
     for (int i=1; i<=dg; i++){
-        x = g_4_homomorphic(cc,x,vec_size);
+        x = g_3_homomorphic(cc,x,vec_size);
     }
     for (int i=1; i<=df; i++){
-        x = f_4_homomorphic(cc,x,vec_size);
+        x = f_3_homomorphic(cc,x,vec_size);
     }
     auto homomorphic_1 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{1.0}));
     auto homomorphic_05 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{0.5}));
@@ -82,6 +194,29 @@ Ciphertext<DCRTPoly> homomorphic_comparison_g(const CryptoContext<DCRTPoly> &cc,
     auto result = cc->EvalMult(x_plus_1, homomorphic_05);
     return result;
 }
+
+
+vector<vector<Ciphertext<DCRTPoly>>> compute_comparisons(const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &A, const Ciphertext<DCRTPoly> &c_enc_05){
+
+    //Number of compositions
+    int df=2;
+    int dg=2;
+    int vec_size=1;
+
+    vector<vector<Ciphertext<DCRTPoly>>> comparisonSetA(A.size(), vector<Ciphertext<DCRTPoly>>(A.size()));
+    for (size_t i=0; i<A.size(); i++){
+        for (size_t j=i; j<A.size(); j++){
+            if (i!=j){
+                comparisonSetA[i][j] = homomorphic_comparison_g(cc,A[i][0],A[j][0],df,dg,vec_size);
+                comparisonSetA[j][i] = cc->EvalAdd(1,-comparisonSetA[i][j]);
+            } else {
+                comparisonSetA[i][j] = c_enc_05;
+            }
+        }
+    }
+    return comparisonSetA;
+}
+
 
 vector<Ciphertext<DCRTPoly>> L_function(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> comparison, const vector<Ciphertext<DCRTPoly>> &F, const vector<Ciphertext<DCRTPoly>> &G ){
     //L_(a>b)(F,G) = (a>b)*F + (a<b)*G
@@ -296,72 +431,223 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
 
 int main() {
     
-    
     //STEP 0 - Llegir dades
-     // Create a vector to store the dataset
-    vector<vector<double>> dataset;
+     vector<vector<double>> dataset = {
+        {50.2, 3.6, 1.9, 1},
+        {21.8, 1.7, 0.8, 0},
+        {40.5, 2.3, 0.9, 1},
+        {35.3, 3.2, 1.4, 0},
+        {32.0, 2.2, 1.3, 1},
+        {45.3, 3.1, 1.7, 1},
+        {38.9, 2.8, 1.4, 1},
+        {29.1, 1.9, 0.9, 0},
+        {25.5, 1.6, 0.8, 0},
 
-    vector<double> row1 = {25.5, 1.6, 0.8, 0}; // Patient age, BMI, blood sugar level, has diabetes (0=no, 1=yes)
-    vector<double> row2 = {32.0, 2.2, 1.3, 1};
-    vector<double> row3 = {45.3, 3.1, 1.7, 1};
-    vector<double> row4 = {38.9, 2.8, 1.4, 1};
-    vector<double> row5 = {29.1, 1.9, 0.9, 0};
-    vector<double> row6 = {50.2, 3.6, 1.9, 1};
+        {50.2, 3.6, 1.9, 1},
+        {21.8, 1.7, 0.8, 0},
+        {40.5, 2.3, 0.9, 1},
+        {35.3, 3.2, 1.4, 0},
+        {32.0, 2.2, 1.3, 1},
+        {45.3, 3.1, 1.7, 1},
+        {38.9, 2.8, 1.4, 1},
+        {29.1, 1.9, 0.9, 0},
+        {25.5, 1.6, 0.8, 0},
+    };
 
-    dataset.push_back(row1);
-    dataset.push_back(row2);
-    dataset.push_back(row3);
-    dataset.push_back(row4);
-    dataset.push_back(row5);
-    dataset.push_back(row6);
+    vector<vector<vector<double>>> new_dataset;
+    transform(dataset.begin(), dataset.end(), back_inserter(new_dataset), 
+              [](const vector<double>& row) {
+                  vector<vector<double>> row_vectors;
+                  transform(row.begin(), row.end(), back_inserter(row_vectors), 
+                            [](double x) { return vector<double>{x}; });
+                  return row_vectors;
+              });
 
-    // Print the dataset with headers
-    cout << "Age\tBMI\tBS\tDiabetes" << endl;
-    for (size_t i = 0; i < dataset.size(); i++) {
-        for (size_t j = 0; j < dataset[i].size(); j++) {
-            cout << dataset[i][j] << "\t";
+    for (const auto& row : new_dataset) {
+        for (const auto& element : row) {
+            cout << "{" << element[0] << "}, ";
         }
         cout << endl;
     }
+    cout << endl;
 
+    
+    //STEP 1 - Escalar dataset
+    auto scaled_dataset = min_max_scaling(new_dataset);
 
-
-
-    //STEP 1 - Escalar perque les distàncies estiguin entre 0 i 1
+    for (const auto& row : scaled_dataset) {
+        for (const auto& element : row) {
+            cout << "{" << element[0] << "}, ";
+        }
+        cout << endl;
+    }
+    cout << endl;
 
 
     //STEP 2- Encriptar dades
+    auto global_start = std::chrono::high_resolution_clock::now();
+
+
+    //2.1 Setup Parameters FHE
+    uint32_t multDepth = 40;
+    uint32_t scaleModSize = 50;
+    uint32_t batchSize = 1;
+
+    CCParams<CryptoContextCKKSRNS> parameters;
+
+    parameters.SetMultiplicativeDepth(multDepth);
+    parameters.SetScalingModSize(scaleModSize);
+    parameters.SetScalingTechnique(FLEXIBLEAUTO);
+    parameters.SetBatchSize(batchSize);
+
+    CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
+    cc->Enable(PKE);
+    cc->Enable(KEYSWITCH);
+    cc->Enable(LEVELEDSHE);
+
+    auto keys = cc->KeyGen();
+    cc->EvalMultKeyGen(keys.secretKey);
+
+    //2.2 Encrypt
+    vector<vector<Ciphertext<DCRTPoly>>> encrypted_dataset;
+    for (const auto& row : scaled_dataset) {
+        vector<Ciphertext<DCRTPoly>> encrypted_row(row.size());
+        for (size_t i = 0; i < row.size(); i++) {
+            vector<double> values = { row[i][0] };
+            Plaintext ptxt = cc->MakeCKKSPackedPlaintext(values);
+            encrypted_row[i] = cc->Encrypt(keys.publicKey, ptxt);
+        }
+        encrypted_dataset.push_back(encrypted_row);
+    }
+
+    //2.EXTRA - Desencriptar dades
+    /*vector<vector<Plaintext>> decrypted_dataset;
+    for (const auto& row : encrypted_dataset) {
+        vector<Plaintext> decrypted_row(row.size());
+        for (size_t i = 0; i < row.size(); i++) {
+            Plaintext plaintext;
+            cc->Decrypt(keys.secretKey, row[i], &plaintext);
+            decrypted_row[i] = plaintext;
+        }
+        decrypted_dataset.push_back(decrypted_row);
+    }
+
+    // Print the decrypted dataset
+    for (const auto& row : decrypted_dataset) {
+        for (const auto& element : row) {
+            cout << "{" << element << "}, ";
+        }
+        cout << endl;
+    }*/
+
+    //2.3 Separar train i test
+    
+    //2.3.1 De forma aleatoria
+    /*vector<vector<Ciphertext<DCRTPoly>>> shuffled_dataset = encrypted_dataset;
+    random_device rd;
+    mt19937 g(rd());
+    shuffle(shuffled_dataset.begin(), shuffled_dataset.end(), g);
+
+    int num_samples = shuffled_dataset.size();
+    int num_train_samples = 0.9 * num_samples;
+    vector<vector<Ciphertext<DCRTPoly>>> train_dataset(shuffled_dataset.begin(), shuffled_dataset.begin() + num_train_samples);
+    vector<vector<Ciphertext<DCRTPoly>>> test_dataset(shuffled_dataset.begin() + num_train_samples, shuffled_dataset.end());*/
+
+    //2.3.2 Els primers son train i els ultims son test
+    int num_samples = encrypted_dataset.size();
+    int num_train_samples = 0.99 * num_samples;
+    vector<vector<Ciphertext<DCRTPoly>>> train_dataset(encrypted_dataset.begin(), encrypted_dataset.begin() + num_train_samples);
+    vector<vector<Ciphertext<DCRTPoly>>> test_dataset(encrypted_dataset.begin() + num_train_samples, encrypted_dataset.end());
+
+    cout << "Train samples: " << train_dataset.size() << endl;
+    cout << "Test samples: " << test_dataset.size() << endl;
+    cout << endl;
+
+    //Encryption of 0.5. Variable auxiliar que es fa servir al pas 4.1
+    std::vector<double> enc_05 = {0.5};
+    Plaintext p_05 = cc->MakeCKKSPackedPlaintext(enc_05);
+    auto c_enc_05 = cc->Encrypt(keys.publicKey, p_05);
+
+
+    //Variable auxiliar que es fa servir al pas 4.2
+    std::vector<double> aux = {-1.0};
+    Plaintext p_aux = cc->MakeCKKSPackedPlaintext(aux);
+    auto c_aux = cc->Encrypt(keys.publicKey, p_aux);
+
+
+    for (size_t test_index=0; test_index<test_dataset.size(); test_index++){
+        
+        //Agafar els features, no la label
+        auto row_test = test_dataset[test_index];
+        vector<Ciphertext<DCRTPoly>> features_test(row_test.begin(), row_test.end() - 1);
+
+        //Variable (array de distancies i labels) que s'ha d'ordenar
+        vector<vector<Ciphertext<DCRTPoly>>> A;
+
+        for (size_t train_index=0; train_index<train_dataset.size(); train_index++){
+            auto row_train = train_dataset[train_index];
+            vector<Ciphertext<DCRTPoly>> features_train(row_train.begin(), row_train.end() - 1);
+            Ciphertext<DCRTPoly> label_train = row_train[row_train.size()-1];
+            //STEP 3 - Calcular euclidean distance (per cada sample de test)
+            Ciphertext<DCRTPoly> dist = euclidean_distance(cc,features_train,features_test);
+
+            vector<Ciphertext<DCRTPoly>> dist_and_label = {dist, label_train};
+            A.push_back(dist_and_label);
+        }
+
+        //STEP 4 - Ordenar euclidean distance (i respectiva label), fent servir merge_sort
+        //4.1 Calcular pairwise comparisons
+        cout << "Computing comparisons..." << endl;
+
+        auto start = std::chrono::high_resolution_clock::now();
+        vector<vector<Ciphertext<DCRTPoly>>> compSetA = compute_comparisons(cc,A,c_enc_05);
+        auto stop_comp = std::chrono::high_resolution_clock::now();
+        auto duration_comp = std::chrono::duration_cast<std::chrono::microseconds>(stop_comp - start);
+
+        cout << "Comparisons computed" << endl;
+        std::cout << "Time taken in computing comparisons: " << std::chrono::duration<double>(duration_comp).count() << " seconds" << std::endl;
+        cout << endl;
+
+        //4.2 Ordenar (Merge_sort)
+        cout << "Ordering values..." << endl;
+
+        vector<vector<Ciphertext<DCRTPoly>>> sorted_A = merge_sort(cc,A,compSetA,c_aux);
+        auto stop_merge = std::chrono::high_resolution_clock::now();
+        auto duration_merge = std::chrono::duration_cast<std::chrono::microseconds>(stop_merge - stop_comp);
+
+        cout << "Distances ordered" << endl;
+        std::cout << "Time taken merge_sort: " << std::chrono::duration<double>(duration_merge).count() << " seconds" << std::endl;
+        cout << endl;
 
 
 
-    //STEP 3 - Calcular euclidean distance (per cada sample de test)
-
-    //STEP 4 - Ordenar euclidean distance (per cada sample de test), fent servir merge_sort
-    /*int df=2;
-    int dg=2;
-    int vec_size=1;*/
-
-
-    //STEP 5 - Agafar labels de les k distàncies més petites
-
-    //STEP 6 - Sumar les k labels
+        //STEP 5 - Agafar labels de les k distàncies més petites
+        int k=2;
+        vector<vector<Ciphertext<DCRTPoly>>> last_k_elements(sorted_A.end()-k,sorted_A.end());
+        vector<Ciphertext<DCRTPoly>> last_k_labels;
+        for (size_t i=0; i<last_k_elements.size(); i++){
+            auto label_i = last_k_elements[i][1];
+            last_k_labels.push_back(label_i);
+        }
 
 
-    //STEP 7 - Desencriptar resultat de step 6) i en funció d'això decidir la label
+        //STEP 6 - Sumar les k labels
+        auto sum_labels = last_k_labels[0];
+        for (size_t i=1; i<last_k_labels.size(); i++){
+            sum_labels = cc->EvalAdd(sum_labels,last_k_labels[i]);
+        }
+
+
+        //STEP 7 - Desencriptar resultat de step 6) i en funció d'això decidir la label
+        Plaintext result;
+        cc->Decrypt(keys.secretKey, sum_labels, &result);
+        cout << "Sum of labels: " << result << endl;
+        
+    }
+
+    auto global_stop = std::chrono::high_resolution_clock::now();
+    auto total_duration = std::chrono::duration_cast<std::chrono::microseconds>(global_stop - global_start);
+    std::cout << "Total time taken: " << std::chrono::duration<double>(total_duration).count() << " seconds" << std::endl;
 
     return 0;
 }
-
-
-
-
-    
-    
-
-
-    
-
-    
-   
-
-    
