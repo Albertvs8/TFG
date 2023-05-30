@@ -386,7 +386,7 @@ vector<vector<Ciphertext<DCRTPoly>>> merge(const CryptoContext<DCRTPoly> &cc, co
     int t = C.size();
 
     
-    vector<vector<Ciphertext<DCRTPoly>>> Z(s+t)
+    vector<vector<Ciphertext<DCRTPoly>>> Z(s+t);
 
     //1) s+t-1 calls to m_max function
     #pragma omp parallel for schedule(dynamic)
@@ -754,7 +754,7 @@ int main() {
             }
 
 
-            //STEP 7 - Desencriptar resultat de step 6) i en funció d'això decidir la label
+            //Decrypt the sum of labels of the k neighbours and print the final predicted label
             Plaintext result;
             cc->Decrypt(keys.secretKey, sum_labels, &result);
             double decrypt_sum_labels = result->GetRealPackedValue()[0];
@@ -777,7 +777,6 @@ int main() {
             std::cout << "Total time taken in classifying: " << std::chrono::duration<double>(total_duration).count() << " seconds" << std::endl;
             
         }
-
         cout << "________________________________" << endl;
     }
     return 0;
