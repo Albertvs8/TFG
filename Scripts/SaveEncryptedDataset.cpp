@@ -25,7 +25,7 @@ int main() {
     
     
     //STEP 0 - Read dataset
-    //int num_train_samples = 16;
+    int num_samples = 16;
 
     ifstream file("C:/openfhe-development-main/src/pke/examples/heart_failure_clinical_records_dataset.csv");
         
@@ -48,7 +48,7 @@ int main() {
         }
 
         file.close();
-        dataset.assign(dataset.begin(), dataset.begin() + 16);
+        dataset.assign(dataset.begin(), dataset.begin() + num_samples);
 
         // Transform each record from a vector to individual elements for encryption purposes 
         vector<vector<vector<double>>> new_dataset;
@@ -114,7 +114,7 @@ int main() {
             for (size_t j = 0; j < encrypted_dataset[i].size(); j++) {
                 string path = DATAFOLDER + "ciphertext" + to_string(i) + "_" + to_string(j) + ".txt";
                 if (!Serial::SerializeToFile(path, encrypted_dataset[i][j], SerType::BINARY)) {
-                    std::cerr << "Error writing serialization of ciphertext 3 to ciphertext3.txt" << std::endl;
+                    std::cerr << "Error writing serialization" << std::endl;
                 return 1;
                 }
             }
