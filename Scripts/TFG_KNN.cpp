@@ -16,7 +16,6 @@ using namespace lbcrypto;
 using namespace std;
 
 
-//5.2.1
 // Function to scale the dataset using min-max scaling
 vector<vector<vector<double>>> min_max_scaling(const vector<vector<vector<double>>>& dataset) {
     vector<vector<double>> min_max_values(dataset[0].size()-1, vector<double>(2));
@@ -61,8 +60,7 @@ vector<vector<vector<double>>> min_max_scaling(const vector<vector<vector<double
 
 
 
-//5.2.3
-// Function to compute the squared euclidean distance between two ciphertext arrays
+// Function to compute the squared euclidean distance between two ciphertext arrays (Algorithm 1)
 Ciphertext<DCRTPoly> euclidean_distance(const CryptoContext<DCRTPoly> &cc, const vector<Ciphertext<DCRTPoly>> &X, const vector<Ciphertext<DCRTPoly>> &Y){
     if (X.size()!=Y.size()){
         throw std::invalid_argument("X and Y sizes are different");
@@ -83,27 +81,27 @@ Ciphertext<DCRTPoly> euclidean_distance(const CryptoContext<DCRTPoly> &cc, const
 }
 
 
-//5.2.4
-//f_4_homomorphic, f_3_homomorphic and f_2_homomorphic 
-Ciphertext<DCRTPoly> f_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+/* Functions f_4_homomorphic, f_3_homomorphic, f_2_homomorphic, g_4_homomorphic, g_3_homomorphic, g_2_homomorphic 
+   contain the polynomials that can be used for computing the comparison operation. 
+   It is needed one 'f' polynomial and one 'g' polynomial to compute the comparison operation.
+
+   We use the following ones: 
+   f_3_homomorphic (Algorithm 9)
+   g_3_homomorphic (Algorithm 10)
+*/
+Ciphertext<DCRTPoly> f_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
     auto c5 = cc->EvalMult(c2, c3); // c^5
     auto c7 = cc->EvalMult(c2, c5); // c^7
     auto c9 = cc->EvalMult(c2, c7); // c^9
 
-    auto const1 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{35.0/128.0}));
-    auto const2 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-180.0/128.0}));
-    auto const3 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{378.0/128.0}));
-    auto const4 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-420.0/128.0}));
-    auto const5 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{315.0/128.0}));
+    auto term1 = cc->EvalMult(35.0/128.0, c9);
+    auto term2 = cc->EvalMult(-180.0/128.0, c7);
+    auto term3 = cc->EvalMult(378.0/128.0, c5);
+    auto term4 = cc->EvalMult(-420.0/128.0, c3);
+    auto term5 = cc->EvalMult(315.0/128.0, c);
 
-
-    auto term1 = cc->EvalMult(const1, c9);
-    auto term2 = cc->EvalMult(const2, c7);
-    auto term3 = cc->EvalMult(const3, c5);
-    auto term4 = cc->EvalMult(const4, c3);
-    auto term5 = cc->EvalMult(const5, c);
     auto result = cc->EvalAdd(term1, term2);
     result = cc->EvalAdd(result, term3);
     result = cc->EvalAdd(result, term4);
@@ -112,22 +110,16 @@ Ciphertext<DCRTPoly> f_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
     return result;
 }
 
-Ciphertext<DCRTPoly> f_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+Ciphertext<DCRTPoly> f_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
     auto c5 = cc->EvalMult(c2, c3); // c^5
     auto c7 = cc->EvalMult(c2, c5); // c^7
 
-    auto const1 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-5.0/16.0}));
-    auto const2 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{21.0/16.0}));
-    auto const3 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-35.0/16.0}));
-    auto const4 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{35.0/16.0}));
-
-
-    auto term1 = cc->EvalMult(const1, c7);
-    auto term2 = cc->EvalMult(const2, c5);
-    auto term3 = cc->EvalMult(const3, c3);
-    auto term4 = cc->EvalMult(const4, c);
+    auto term1 = cc->EvalMult(-5.0/16.0, c7);
+    auto term2 = cc->EvalMult(21.0/16.0, c5);
+    auto term3 = cc->EvalMult(-35.0/16.0, c3);
+    auto term4 = cc->EvalMult(35.0/16.0, c);
 
     auto result = cc->EvalAdd(term1, term2);
     auto result2 = cc->EvalAdd(term3, term4);
@@ -137,7 +129,7 @@ Ciphertext<DCRTPoly> f_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
 }
 
 
-Ciphertext<DCRTPoly> f_2_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+Ciphertext<DCRTPoly> f_2_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
     auto c5 = cc->EvalMult(c2, c3); // c^5
@@ -154,25 +146,19 @@ Ciphertext<DCRTPoly> f_2_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
 
 
 
-Ciphertext<DCRTPoly> g_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+Ciphertext<DCRTPoly> g_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
     auto c5 = cc->EvalMult(c2, c3); // c^5
     auto c7 = cc->EvalMult(c2, c5); // c^7
     auto c9 = cc->EvalMult(c2, c7); // c^9
 
-    auto const1 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{46623.0 / 1024.0}));
-    auto const2 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-113492.0 / 1024.0}));
-    auto const3 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{97015.0 / 1024.0}));
-    auto const4 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{-34974.0 / 1024.0}));
-    auto const5 = cc->MakeCKKSPackedPlaintext(std::vector<double>(vec_size,{5850.0 / 1024.0}));
+    auto term1 = cc->EvalMult(46623.0 / 1024.0, c9);
+    auto term2 = cc->EvalMult(-113492.0 / 1024.0, c7);
+    auto term3 = cc->EvalMult(97015.0 / 1024.0, c5);
+    auto term4 = cc->EvalMult(-34974.0 / 1024.0, c3);
+    auto term5 = cc->EvalMult(5850.0 / 1024.0, c);
 
-
-    auto term1 = cc->EvalMult(const1, c9);
-    auto term2 = cc->EvalMult(const2, c7);
-    auto term3 = cc->EvalMult(const3, c5);
-    auto term4 = cc->EvalMult(const4, c3);
-    auto term5 = cc->EvalMult(const5, c);
     auto result = cc->EvalAdd(term1, term2);
     result = cc->EvalAdd(result, term3);
     result = cc->EvalAdd(result, term4);
@@ -181,7 +167,7 @@ Ciphertext<DCRTPoly> g_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
     return result;
 }
 
-Ciphertext<DCRTPoly> g_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+Ciphertext<DCRTPoly> g_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
     auto c5 = cc->EvalMult(c2, c3); // c^5
@@ -199,7 +185,7 @@ Ciphertext<DCRTPoly> g_3_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
     return result;
 }
 
-Ciphertext<DCRTPoly> g_2_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c, int vec_size) {
+Ciphertext<DCRTPoly> g_2_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c) {
     auto c2 = cc->EvalMult(c, c); // c^2
     auto c3 = cc->EvalMult(c2, c); // c^3
     auto c5 = cc->EvalMult(c2, c3); // c^5
@@ -215,14 +201,17 @@ Ciphertext<DCRTPoly> g_2_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
 }
 
 
-
-Ciphertext<DCRTPoly> homomorphic_comparison_g(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c1, const Ciphertext<DCRTPoly> &c2, int df, int dg, int vec_size) {
+//Function to compute the comparison result between two ciphertexts (Algorithm 2)
+Ciphertext<DCRTPoly> homomorphic_comparison_g(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c1, const Ciphertext<DCRTPoly> &c2) {
+    int df=2;
+    int dg=3;
+    
     auto x = cc->EvalSub(c1, c2);
     for (int i=1; i<=dg; i++){
-        x = g_3_homomorphic(cc,x,vec_size);
+        x = g_3_homomorphic(cc,x);
     }
     for (int i=1; i<=df; i++){
-        x = f_3_homomorphic(cc,x,vec_size);
+        x = f_3_homomorphic(cc,x);
     }
 
     auto x_plus_1 = cc->EvalAdd(x, 1);
@@ -230,12 +219,8 @@ Ciphertext<DCRTPoly> homomorphic_comparison_g(const CryptoContext<DCRTPoly> &cc,
     return result;
 }
 
-
+//Function to compute a matrix of pairwise comparisons given an array of ciphertext tuples (Algorithm 7)
 vector<vector<Ciphertext<DCRTPoly>>> compute_comparisons_parallel(const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &A, const Ciphertext<DCRTPoly> &c_enc_05) {
-    //Number of compositions
-    int df=2;
-    int dg=3;
-    int vec_size=1;
 
     vector<vector<Ciphertext<DCRTPoly>>> comparisonSetA(A.size(), vector<Ciphertext<DCRTPoly>>(A.size()));
 
@@ -243,7 +228,7 @@ vector<vector<Ciphertext<DCRTPoly>>> compute_comparisons_parallel(const CryptoCo
     for (size_t i=0; i<A.size(); i++){
         for (size_t j=i; j<A.size(); j++){
             if (i!=j){
-                comparisonSetA[i][j] = homomorphic_comparison_g(cc,A[i][0],A[j][0],df,dg,vec_size);
+                comparisonSetA[i][j] = homomorphic_comparison_g(cc,A[i][0],A[j][0]);
                 comparisonSetA[j][i] = cc->EvalAdd(1,-comparisonSetA[i][j]);
             } else {
                 comparisonSetA[i][j] = c_enc_05;
@@ -254,43 +239,42 @@ vector<vector<Ciphertext<DCRTPoly>>> compute_comparisons_parallel(const CryptoCo
 }
 
 
+//L_Function: L_(a>b)(F,G) = (a>b)*F + (a<b)*G (Algorithm 4)
 vector<Ciphertext<DCRTPoly>> L_function(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> comparison, const vector<Ciphertext<DCRTPoly>> &F, const vector<Ciphertext<DCRTPoly>> &G ){
-    //L_(a>b)(F,G) = (a>b)*F + (a<b)*G
- 
-    //L function calculation for distance
 
     auto invComp = cc->EvalAdd(1,-comparison);
 
+    //L function calculation for the first element of the tuple (distance)
     auto first_term_dist = cc->EvalMult(comparison,F[0]);
     auto second_term_dist = cc->EvalMult(invComp,G[0]);
     auto result_dist = cc->EvalAdd(first_term_dist,second_term_dist);
 
-    //L function calculation for label
+    //L function calculation for the second element of the tuple (label)
     auto first_term_label = cc->EvalMult(comparison,F[1]);
     auto second_term_label = cc->EvalMult(invComp,G[1]);
     auto result_label = cc->EvalAdd(first_term_label,second_term_label);
 
     vector<Ciphertext<DCRTPoly>> result = {result_dist,result_label};
     return result;
-
 }
 
+//m-th greatest element of the union of two sorted arrays (Algorithm 11)
 vector<Ciphertext<DCRTPoly>> m_max(int m, const CryptoContext<DCRTPoly> &cc, const vector<vector<Ciphertext<DCRTPoly>>> &B, const vector<vector<Ciphertext<DCRTPoly>>> &C,const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetBC) 
 {   
     int size_b = B.size();
     int size_c = C.size();
 
-    //base case
+    //base case 1: one array is empty
     if (size_b == 0 || size_c == 0) {
        return size_b == 0 ? C[m - 1] : B[m - 1];
     } 
 
-    //base case, when M=1 return max of first elements of both arrays
+    //base case 2: when M=1 return max of first elements of both arrays
     if (m==1) {
         return L_function(cc, comparisonSetBC[0][0], B[0], C[0]);
     } 
     
-    //base case, when M=size_b+size_c return min of last elements of both arrays
+    //base case 3: when M=size_b+size_c return min of last elements of both arrays
     if (m==size_b+size_c){
         return L_function(cc, comparisonSetBC[size_b-1][size_c-1], C[size_c-1], B[size_b-1]);
     }
@@ -396,14 +380,15 @@ vector<Ciphertext<DCRTPoly>> m_max(int m, const CryptoContext<DCRTPoly> &cc, con
 }
 
 
-
+//Function used to merge two sorted arrays (Algorithm 5)
 vector<vector<Ciphertext<DCRTPoly>>> merge(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> c0, const vector<vector<Ciphertext<DCRTPoly>>> &B, const vector<vector<Ciphertext<DCRTPoly>>> &C, const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetBC){
     int s = B.size();
     int t = C.size();
-    //int k = floor((s+t)/2);
 
     
-    vector<vector<Ciphertext<DCRTPoly>>> Z(s+t);
+    vector<vector<Ciphertext<DCRTPoly>>> Z(s+t)
+
+    //1) s+t-1 calls to m_max function
     #pragma omp parallel for schedule(dynamic)
     for (int i=0; i<(s+t-2); i++){
         vector<Ciphertext<DCRTPoly>> zi = m_max(i+1,cc,B,C,comparisonSetBC);
@@ -412,25 +397,26 @@ vector<vector<Ciphertext<DCRTPoly>>> merge(const CryptoContext<DCRTPoly> &cc, co
     }
     Z[s+t-1] = m_max(s+t,cc,B,C,comparisonSetBC);
 
-    // sum all B
+    //2) Compute missing element
+
+    //sum all elements B
     Ciphertext<DCRTPoly> zi_dist=c0;
     Ciphertext<DCRTPoly> zi_label=c0;
     for (int i=0; i<s; i++){
         zi_dist = cc->EvalAdd(zi_dist,B[i][0]);
         zi_label = cc->EvalAdd(zi_label,B[i][1]);
     }
-    // sum all C
+    // sum all elements in C
     for (int i=0; i<t; i++){
         zi_dist = cc->EvalAdd(zi_dist,C[i][0]);
         zi_label = cc->EvalAdd(zi_label,C[i][1]);
     }
 
-    //Subtract all Z (except last element)
+    //Subtract all elements computed in Z (except last element)
     for (int i=0; i<(s+t-2); i++){
         zi_dist = cc->EvalSub(zi_dist,Z[i][0]);
         zi_label = cc->EvalSub(zi_label,Z[i][1]);
     }
-
     zi_dist = cc->EvalSub(zi_dist, Z[s+t-1][0]);
     zi_label = cc->EvalSub(zi_label, Z[s+t-1][1]);
 
@@ -439,15 +425,17 @@ vector<vector<Ciphertext<DCRTPoly>>> merge(const CryptoContext<DCRTPoly> &cc, co
     return Z;
 }
 
-
+//Function used to sort an array of tuples (Algorithm 3)
 vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c0, const vector<vector<Ciphertext<DCRTPoly>>> &A, const vector<vector<Ciphertext<DCRTPoly>>> &comparisonSetA){
+    
+    //Base case
     if (A.size()==1) {
         return A;
     }
     int s=floor(A.size()/2);
     int n=A.size(); 
     
-
+    //Step 1: Recursively sort left and right parts of the array
     vector<vector<Ciphertext<DCRTPoly>>> comparisonSetB(s);
 
     for (int i = 0; i < s; i++) {
@@ -469,16 +457,17 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
 
     #pragma omp task shared(B)
         {  
-            B = merge_sort(cc,c0,vector<vector<Ciphertext<DCRTPoly>>>(A.begin(), A.begin()+s), comparisonSetB);
+            B = merge_sort(cc,c0,vector<vector<Ciphertext<DCRTPoly>>>(A.begin(), A.begin()+s), comparisonSetB); //Recursively sort left part of the array
         }
 
     #pragma omp task shared(C)
         {
-            C = merge_sort(cc,c0,vector<vector<Ciphertext<DCRTPoly>>>(A.begin()+s, A.end()), comparisonSetC);
+            C = merge_sort(cc,c0,vector<vector<Ciphertext<DCRTPoly>>>(A.begin()+s, A.end()), comparisonSetC); //Recursively sort right part of the array
         } 
 
     int k=A.size();
 
+    //Step 2: Sort comparison results
     vector<vector<vector<Ciphertext<DCRTPoly>>>> unionBiAj(k-s);
     auto sorterParameter = vector<vector<Ciphertext<DCRTPoly>>>(comparisonSetA.begin(), comparisonSetA.begin()+s);
     #pragma omp parallel for
@@ -522,6 +511,7 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
     }
     #pragma omp taskwait
 
+    //Step 3: Merge the two sorted halves using the new comparison matrix
     auto return_value = merge(cc,c0,B,C,BCompC);
     return return_value;
 
@@ -530,19 +520,21 @@ vector<vector<Ciphertext<DCRTPoly>>> merge_sort(const CryptoContext<DCRTPoly> &c
 int main() {
     
     
-    //STEP 0 - Read dataset
-    int num_train_samples = 15;
-    int num_test_samples = 1;
-    int max_0_test = floor(num_test_samples/2.0);
-    int max_1_test = ceil(num_test_samples/2.0);
+    //READ DATASET. For time complexity purposes we don't use the full dataset but only a few samples of it. We select these samples in such a way that the dataset is balanced. 
+    int max_train_samples = 16;
+    int min_train_samples = 8;
 
-    for (int train_samples = num_train_samples; train_samples <= num_train_samples; train_samples++) {
+    int num_test_samples = 1;
+    int max_0_test = floor(num_test_samples/2.0); //Number of test samples from class 0
+    int max_1_test = ceil(num_test_samples/2.0); //Number of test samples from class 1
+
+    for (int train_samples = min_train_samples; train_samples <= max_train_samples; train_samples++) {
         ifstream file("C:/openfhe-development-main/src/pke/examples/heart_failure_clinical_records_dataset.csv");
         
-        int max_0 = floor(num_train_samples/2.0);
-        int max_1 = ceil(num_train_samples/2.0);
+        int max_0 = floor(train_samples/2.0);  //Number of train samples from class 0 
+        int max_1 = ceil(train_samples/2.0); //Number of train samples from class 1 
 
-        cout << "Train samples: " << num_train_samples << endl;
+        cout << "Train samples: " << train_samples << endl;
         cout << "Test samples: " << num_test_samples << endl;
         cout << endl;
 
@@ -558,16 +550,11 @@ int main() {
             stringstream ss(line);
 
             string cell;
-            int count = 0; // counter for the number of values pushed into the row vector
             while (getline(ss, cell, ','))
             {
-                count++;
-                if (count > -1) { // only push the last 4 values
                     row.push_back(stod(cell));
-                }
             }
 
-            // check if the last variable is 0 or 1 and add to the corresponding counter
             if (row.back() == 0 && count_0 < max_0) {
                 if (last_class != 0) { // alternate classes
                     dataset.push_back(row);
@@ -588,7 +575,6 @@ int main() {
         }
         file.close();
 
-        // add 2 additional records from one class and 2 from the other class
         int count_additional_0 = 0, count_additional_1 = 0;
         for (const auto& row : additional_records) {
             if (row.back() == 0 && count_additional_0 < max_0_test) {
@@ -614,7 +600,7 @@ int main() {
                     return row_vectors;
                 });
         
-        // Print dataset
+        // Print dataset which has the defined number of training and testing samples
         cout << "Original dataset:" << endl;
         for (const auto& row : new_dataset) {
             for (const auto& element : row) {
@@ -625,7 +611,7 @@ int main() {
         cout << endl;
 
         
-        //STEP 1 - Apply dataset scaling
+        //DATASET SCALING
         auto scaled_dataset = min_max_scaling(new_dataset);
 
         // Print scaled dataset
@@ -639,11 +625,11 @@ int main() {
         cout << endl;
 
 
-        //STEP 2 - Encriptar dades
+        //ENCRYPTION
         auto encrypt_start = std::chrono::high_resolution_clock::now();
         cout << "Encrypting dataset..." << endl;
 
-        //2.1 Setup Parameters FHE
+        //Setup Parameters FHE
         uint32_t multDepth = 50;
         uint32_t scaleModSize = 50;
         uint32_t batchSize = 1;
@@ -663,7 +649,7 @@ int main() {
         auto keys = cc->KeyGen();
         cc->EvalMultKeyGen(keys.secretKey);
 
-        //2.2 Encrypt
+        //Encrypt
         vector<vector<Ciphertext<DCRTPoly>>> encrypted_dataset;
         for (const auto& row : scaled_dataset) {
             vector<Ciphertext<DCRTPoly>> encrypted_row(row.size());
@@ -676,13 +662,13 @@ int main() {
         }
 
         
-        //Encryption of 0.5.  Variable auxiliar que es fa servir al pas 4.1
+        //Encryption of 0.5, to be used when populating the comparison matrix
         std::vector<double> enc_05 = {0.5};
         Plaintext p_05 = cc->MakeCKKSPackedPlaintext(enc_05);
         auto c_enc_05 = cc->Encrypt(keys.publicKey, p_05);
 
 
-        //Encryption of 0. Variable auxiliar que es fa servir al pas 4.2
+        //Encryption of 0, to be used when sorting as auxilliary variable
         std::vector<double> enc_0 = {0};
         Plaintext p_0 = cc->MakeCKKSPackedPlaintext(enc_0);
         auto c_enc_0 = cc->Encrypt(keys.publicKey, p_0);
@@ -694,21 +680,21 @@ int main() {
         std::cout << "Time taken in encryption process: " << std::chrono::duration<double>(duration_encrypt).count() << " seconds" << std::endl;
         cout << endl;
 
-        // Separar train i test
-        vector<vector<Ciphertext<DCRTPoly>>> train_dataset(encrypted_dataset.begin(), encrypted_dataset.begin() + num_train_samples);
+        //Train-test split
+        vector<vector<Ciphertext<DCRTPoly>>> train_dataset(encrypted_dataset.begin(), encrypted_dataset.begin() + train_samples);
         vector<vector<Ciphertext<DCRTPoly>>> test_dataset(encrypted_dataset.end() - num_test_samples, encrypted_dataset.end());
 
         for (size_t test_index=0; test_index<test_dataset.size(); test_index++){
             auto global_start = std::chrono::high_resolution_clock::now();
-            //Agafar els features, no la label
+
             auto row_test = test_dataset[test_index];
             vector<Ciphertext<DCRTPoly>> features_test(row_test.begin(), row_test.end() - 1); 
 
-            //Variable (array de distancies i labels) que s'ha d'ordenar
-            vector<vector<Ciphertext<DCRTPoly>>> A;
+
+            vector<vector<Ciphertext<DCRTPoly>>> A; //Variable (array of distance-label pairs) to be sorted
 
 
-            //STEP 3 - Calcular euclidean distance 
+            //COMPUTE EUCLIDEAN DISTANCE
             cout << "Computing distances..." << endl;
             auto distance_start = std::chrono::high_resolution_clock::now();
             for (size_t train_index=0; train_index<train_dataset.size(); train_index++){
@@ -727,8 +713,8 @@ int main() {
             std::cout << "Time taken in computing distances: " << std::chrono::duration<double>(distance_duration).count() << " seconds" << std::endl;
             cout << endl;
 
-            //STEP 4 - Ordenar euclidean distance (i respectiva label), fent servir merge_sort
-            //4.1 Calcular pairwise comparisons
+
+            //COMPUTE COMPARISONS
             cout << "Computing comparisons..." << endl;
 
             auto start = std::chrono::high_resolution_clock::now();
@@ -739,7 +725,7 @@ int main() {
             std::cout << "Time taken in computing comparisons: " << std::chrono::duration<double>(duration_comp).count() << " seconds" << std::endl;
             cout << endl;
 
-            //4.2 Ordenar (Merge_sort)
+            //SORTING
             cout << "Ordering values..." << endl;
 
             vector<vector<Ciphertext<DCRTPoly>>> sorted_A = merge_sort(cc,c_enc_0,A,compSetA);
@@ -750,8 +736,8 @@ int main() {
             cout << endl;
 
 
-
-            //STEP 5 - Agafar labels de les k distàncies més petites
+            //CLASSIFICATION
+            //Select the k neighbours with smallest distance
             int k=3;
             vector<vector<Ciphertext<DCRTPoly>>> last_k_elements(sorted_A.end()-k,sorted_A.end());
             vector<Ciphertext<DCRTPoly>> last_k_labels;
@@ -761,7 +747,7 @@ int main() {
             }
 
 
-            //STEP 6 - Sumar les k labels
+            //Sum labels of the k neighbours
             auto sum_labels = last_k_labels[0];
             for (size_t i=1; i<last_k_labels.size(); i++){
                 sum_labels = cc->EvalAdd(sum_labels,last_k_labels[i]);
@@ -783,17 +769,16 @@ int main() {
 
             cout << "Sum of labels: " << result << endl;
             cout << "Predicted label: " << predicted_label << endl;
-             cout << endl;
+            cout << endl;
 
 
             auto global_stop = std::chrono::high_resolution_clock::now();
             auto total_duration = std::chrono::duration_cast<std::chrono::microseconds>(global_stop - global_start);
             std::cout << "Total time taken in classifying: " << std::chrono::duration<double>(total_duration).count() << " seconds" << std::endl;
-
             
         }
 
-                cout << "________________________________" << endl;
+        cout << "________________________________" << endl;
     }
     return 0;
 }
