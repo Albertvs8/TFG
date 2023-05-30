@@ -216,7 +216,7 @@ int main() {
     // Setup parameters cryptocontext
     uint32_t multDepth = 37;
     uint32_t scaleModSize = 50;
-    uint32_t batchSize = 16;
+    uint32_t batchSize = 4;
     
     CCParams<CryptoContextCKKSRNS> parameters;
     
