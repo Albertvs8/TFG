@@ -10,7 +10,8 @@
 using namespace lbcrypto;
 using namespace std;
 
-//Plain inputs
+
+//Functions for plain inputs
 double binomialCoefficient(int n, int k) {
     int result = 1;
     for (int i = 1; i <= k; i++) {
@@ -18,6 +19,7 @@ double binomialCoefficient(int n, int k) {
     }
     return result;
 }
+
 
 double f_n(int n, double x) {
     double sum = 0;
@@ -57,7 +59,7 @@ double comparison_g(double a, double b, int n, int df, int dg) {
     return (1.0/2.0) * (x + 1.0);
 }
 
-//Encrypted inputs
+//Functions for encrypted inputs
 std::vector<double> getInputVector(const std::string& name) {
     std::vector<double> vec;
     double input;
@@ -128,8 +130,6 @@ Ciphertext<DCRTPoly> g_4_homomorphic(const CryptoContext<DCRTPoly> &cc, const Ci
 
     return result;
 }
-
-
 
 
 Ciphertext<DCRTPoly> homomorphic_comparison_f(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &c1, const Ciphertext<DCRTPoly> &c2, int d, int vec_size) {
@@ -229,24 +229,15 @@ int main() {
     cc->Enable(PKE);
     cc->Enable(KEYSWITCH);
     cc->Enable(LEVELEDSHE);
-    // cc->Enable(ADVANCEDSHE); //for bootstrapping 
-    // cc->Enable(FHE);   //for bootstrapping
+
     usint ringDim = cc->GetRingDimension();
     
     std::cout << "CKKS scheme is using ring dimension " << ringDim << std::endl;
     std::cout << ""<< std::endl;
 
-    /* BOOTSTRAP SETUP
-    std::vector<uint32_t> levelBudget = {4, 4};
-    std::vector<uint32_t> bsgsDim = {0, 0};
-    uint32_t numSlots = 8;
-    cc->EvalBootstrapSetup(levelBudget,bsgsDim,numSlots);
-    */
-
     auto keys = cc->KeyGen();
     cc->EvalMultKeyGen(keys.secretKey);
 
-    // cc->EvalBootstrapKeyGen(keys.secretKey, 8);  // BOOTSTRAP keygen
 
     Plaintext ptxta = cc->MakeCKKSPackedPlaintext(vector_a);
     Plaintext ptxtb = cc->MakeCKKSPackedPlaintext(vector_b);
@@ -282,8 +273,6 @@ int main() {
     result_decrypted_g->SetLength(batchSize);
     std::cout << "Using g polynomials: comp( a ,  b ) = " << result_decrypted_g << std::endl;
     std::cout << "Time taken: " << std::chrono::duration<double>(duration).count() << " seconds" << std::endl;
-
-    return 0;
 
 }
     
