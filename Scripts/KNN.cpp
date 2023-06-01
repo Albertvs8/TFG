@@ -521,7 +521,7 @@ int main() {
     
     
     //READ DATASET. For time complexity purposes we don't use the full dataset but only a few samples of it. We select these samples in such a way that the dataset is balanced. 
-    int max_train_samples = 16;
+    int max_train_samples = 16; 
     int min_train_samples = 8;
 
     int num_test_samples = 1;
@@ -612,7 +612,7 @@ int main() {
 
         
         //DATASET SCALING
-        auto scaled_dataset = min_max_scaling(new_dataset);
+        auto scaled_dataset = min_max_scaling(new_dataset); //Scale dataset
 
         // Print scaled dataset
         cout << "Scaled dataset:" << endl;
@@ -737,8 +737,7 @@ int main() {
 
 
             //CLASSIFICATION
-            //Select the k neighbours with smallest distance
-            int k=3;
+            int k=3; //Set the number of nearest neighbours to look at
             vector<vector<Ciphertext<DCRTPoly>>> last_k_elements(sorted_A.end()-k,sorted_A.end());
             vector<Ciphertext<DCRTPoly>> last_k_labels;
             for (size_t i=0; i<last_k_elements.size(); i++){
