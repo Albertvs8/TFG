@@ -1,1 +1,4 @@
-[Link to encrypted data](https://docs.google.com/document/d/16KtxyObSOGC-GMcM_tc7DkdUz-XJ0zwTS_BiuS0xWcA/edit?usp=sharing](https://drive.google.com/file/d/1NO-jbQ5Owt6ybL_kcTy0-91BEEpOaJnn/view?usp=drive_link)
+[Link to encrypted data][encrypted-data]
+
+[encrypted-data]: https://drive.google.com/file/d/1NO-jbQ5Owt6ybL_kcTy0-91BEEpOaJnn/view?usp=sharing
+
