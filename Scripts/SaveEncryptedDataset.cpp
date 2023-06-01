@@ -24,7 +24,7 @@ using namespace std;
 int main() {
     
     
-    //STEP 0 - Read dataset
+    //Read dataset
     int num_samples = 16;
 
     ifstream file("C:/openfhe-development-main/src/pke/examples/heart_failure_clinical_records_dataset.csv");
@@ -71,10 +71,9 @@ int main() {
         cout << endl;
 
 
-        //STEP 2 - Encriptar dades
         cout << "Encrypting dataset..." << endl;
 
-        //2.1 Setup Parameters FHE
+        //Setup Parameters FHE
         uint32_t multDepth = 50;
         uint32_t scaleModSize = 50;
         uint32_t batchSize = 1;
@@ -109,6 +108,7 @@ int main() {
 
         cout << "Saving ciphertexts..." << endl;
 
+        //Save encrypted dataset
         string DATAFOLDER = "C:/openfhe-development-main/src/pke/examples/encrypted_dataset/";
         for (size_t i = 0; i < encrypted_dataset.size(); i++) {
             for (size_t j = 0; j < encrypted_dataset[i].size(); j++) {
