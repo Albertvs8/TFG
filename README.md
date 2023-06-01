@@ -17,7 +17,7 @@ It contains two notebooks:
 It contains three files:
 - `heart_failure_clinical_records_dataset.csv`: Dataset containing all the original 299 samples.
 - `heart_failure_clinical_records_dataset_16samples.csv`: Dataset containing 16 samples, used to compare the memory size between unencrypted data and encrypted data.
-- `encrypted_dataset.md`: Link to the files containing 16 encrypted samples. Due to storage issues, it is not uploaded to the repository.
+- `encrypted_dataset.md`: Link to the files containing 16 encrypted samples. Due to storage issues, these files are not uploaded to the repository.
 
 ### Scripts/
 
