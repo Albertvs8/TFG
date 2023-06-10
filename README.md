@@ -31,7 +31,7 @@ It contains three files:
 ### Scripts/
 
 It contains four scripts:
-- `Comparison.cpp`: Script to test the comparison function.
-- `MergeSort.cpp`: Script to test the sorting function.
+- `Comparison.cpp`: Script used to test the comparison function.
+- `MergeSort.cpp`: Script used to test the sorting function.
 - `SaveEncryptedDataset.pp`: Script used to save encrypted data to memory.
 - `KNN.cpp`: Script containing the full implementation of the KNN algorithm.
