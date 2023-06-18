@@ -4,7 +4,7 @@
 
 This repository comprises the code that was developed as part of my Final Degree Project in Mathematical Engineering in Data Science at Universitat Pompeu Fabra.
 
-*Fully Homomorphic Encryption (FHE) is an encryption technique that allows computation to be performed on encrypted data without the need to decrypt it first. This has the potential to revolutionize data security and privacy, and ongoing research is focused on improving its efficiency and practicability.*
+*Fully homomorphic encryption (FHE) is an encryption technique that allows computation to be performed on encrypted data without the need to decrypt it first. This has the potential to revolutionize data security and privacy, and ongoing research is focused on improving its efficiency and practicability.*
 
 *One limitation of FHE schemes is that, typically, they only support additions and multiplications. More complex operations, such as real number comparison, require careful design of new algorithms. In this project, we explore a recent approach based on polynomial composition for comparing two real numbers in a homomorphically encrypted setting. We study how this method can be used to sort an array of real numbers using FHE. We then apply these concepts to design and implement a fully homomorphic version of the popular machine learning algorithm known as k-nearest neighbours (KNN).*
 
